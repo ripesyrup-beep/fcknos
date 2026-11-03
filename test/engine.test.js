@@ -19,11 +19,16 @@ test('swap hand<->up then 3♠ holder starts and must play it',()=>{const g=E.ne
 test('multiples of same rank; mixed ranks rejected',()=>{const g=G([['5S','5H','6D'],['KD']]);bad(g,0,['5S','6D']);ok(g,0,['5S','5H']);assert.equal(g.pile.length,2);});
 test('must play equal or higher',()=>{const g=G([['4S','8H'],['KD']],{pile:['7C']});bad(g,0,['4S']);ok(g,0,['8H']);
   const g2=G([['7S'],['KD']],{pile:['7C']});ok(g2,0,['7S']);});
-test('Ace goes on anything; next player goes HIGH (A/2/10) or LOW (anything else)',()=>{
-  for(const nxt of ['AH','2C','10D','3C','4C','5C','6C','7C','8C','9C','JC','QC','KC']){const g=G([['AS','4D'],[nxt,'KS']],{pile:['KD']});
-    ok(g,0,['AS']);assert.equal(g.mode,'ace');E.play(g,'p1',[nxt]);}
-  const g=G([['AS','4D'],['2C','KS'],['9H']],{pile:['KD']});ok(g,0,['AS']);E.play(g,'p1',['2C']);assert.equal(g.mode,'any','2 still wild/resets after Ace');ok(g,2,['9H']);
-  const t=G([['AS','4D'],['10D','KS']],{pile:['QD']});ok(t,0,['AS']);E.play(t,'p1',['10D']);assert.equal(t.pile.length,0,'10 still burns after Ace');
+test('Ace: player who plays it calls HIGH (A/2/10) or LOW (not A/2/10)',()=>{
+  const mk=(nxt,ch)=>{const g=G([['AS','4D'],[nxt,'5S']],{pile:['KD']});ok(g,0,['AS']);assert.equal(g.turn,0);assert.throws(()=>E.play(g,'p1',[nxt]));
+    E.chooseAce(g,'p0',ch);assert.equal(g.turn,1);return g;};
+  for(const n of ['AH','2C','10D']){const g=mk(n,'high');E.play(g,'p1',[n]);}
+  for(const n of ['3C','4C','5C','6C','7C','8C','9C','JC','QC','KC']){assert.throws(()=>E.play(mk(n,'high'),'p1',[n]));E.play(mk(n,'low'),'p1',[n]);}
+  for(const n of ['AH','2C','10D'])assert.throws(()=>E.play(mk(n,'low'),'p1',[n]));
+  const h=mk('2C','high');E.play(h,'p1',['2C']);assert.equal(h.mode,'any','2 still resets after ACE→HIGH');
+  const t=mk('10D','high');E.play(t,'p1',['10D']);assert.equal(t.pile.length,0,'10 still burns');
+  const pu=mk('KC','high');E.pickup(pu,'p1');assert.equal(pu.players[1].hand.length,4);
+  assert.throws(()=>E.chooseAce(G([['AS'],['KC']]),'p0','high'));
   const n=G([['AS','4D'],['KS']],{pile:['9D']});bad(n,0,['AS']);});
 test('9: next must be 3-8 (10 allowed), 2 on 9 rejected, K rejected',()=>{const g=G([['9S'],['2C','KD','3H','10C']]);ok(g,0,['9S']);
   bad(g,1,['2C']);bad(g,1,['KD']);ok(g,1,['3H']);
@@ -46,12 +51,16 @@ test('slap-in: three of a rank on top, holder of fourth slaps out of turn; first
   const g2=G([['7C','7D','7H','4S'],['5S'],['7S'],['QC']],{now:()=>t});t=0;ok(g2,0,['7C','7D','7H']);t=4001;assert.throws(()=>E.slap(g2,'p2'),/late/);
   // works for any rank
   t=0;const g3=G([['QC','QD','QH','4S'],['5S'],['QS','2D']],{now:()=>t});ok(g3,0,['QC','QD','QH']);E.slap(g3,'p2');assert.equal(g3.burned,4);});
-test('cannot play -> pick up whole pile; pickup refused when you can play',()=>{const g=G([['KC'],['KD','5H']],{pile:['QS']});
-  assert.throws(()=>E.pickup(g,'p0'));const g2=G([['4C'],['KD']],{pile:['5S','QS']});assert.equal(E.legal(g2,'p0').length,0);E.pickup(g2,'p0');
+test('cannot play (or chooses not to) -> pick up whole pile',()=>{const g=G([['KC','4D'],['KD','5H']],{pile:['QS']});
+  E.pickup(g,'p0');assert.equal(g.players[0].hand.length,3);assert.throws(()=>E.pickup(G([['KC'],['KD']]),'p0'),/empty/);const g2=G([['4C'],['KD']],{pile:['5S','QS']});assert.equal(E.legal(g2,'p0').length,0);E.pickup(g2,'p0');
   assert.equal(g2.players[0].hand.length,3);assert.equal(g2.turn,1);assert.equal(g2.pile.length,0);});
-test('hand refills to 3 from draw; then face-up; then blind face-down',()=>{const g=G([['5C','6C','7C'],['KD']],{draw:['8C','9C'],up:[['JH']],down:[['QD']]});
-  ok(g,0,['5C']);assert.equal(g.players[0].hand.length,3);assert.equal(g.draw.length,1);
-  const g2=G([[],['2D']],{up:[['JH']],down:[['QD'],['KD']],pile:['4C']});ok(g2,0,['JH']);assert.equal(g2.players[0].up.length,0);E.play(g2,'p1',['2D']);E.play(g2,'p0',[],{index:0});assert.equal(g2.players[0].place,1);});
+test('draw only when down to 2 or fewer; refill to 3',()=>{const g=G([['5C','5D','6C','7C'],['KD']],{draw:['8C','9C','JC']});
+  ok(g,0,['5C']);assert.equal(g.players[0].hand.length,3);assert.equal(g.draw.length,3,'no draw while holding 3+');
+  const g2=G([['5C','5D','6C'],['KD']],{draw:['8C','9C','JC']});ok(g2,0,['5C','5D']);assert.equal(g2.players[0].hand.length,3);assert.equal(g2.draw.length,1);});
+test('deck gone + hand empty -> pick up ALL face-up at once; then blind face-down',()=>{
+  const g=G([['5C'],['KD','2D']],{up:[['JH','JD','4S']],down:[['QD'],['KC']],pile:['4C']});ok(g,0,['5C']);
+  assert.deepEqual(g.players[0].hand.map(c=>c.id).sort(),['4S','JD','JH']);assert.equal(g.players[0].up.length,0);
+  E.play(g,'p1',['2D']);ok(g,0,['JH','JD']);E.play(g,'p1',['KD']);E.pickup(g,'p0');assert.equal(g.players[0].hand.length,7,'4S + whole pile of 6');});
 test('blind down card that fails -> picks up pile + card',()=>{const g=G([[],['KD']],{down:[['4D'],['KD']],pile:['QS']});E.play(g,'p0',[],{index:0});
   assert.deepEqual(g.players[0].hand.map(c=>c.id).sort(),['4D','QS']);assert.equal(g.turn,1);});
 test('first out wins, last holding cards loses',()=>{const g=G([['KC'],['3D'],['4D']],{down:[[],['5D'],['6D']]});ok(g,0,['KC']);assert.equal(g.players[0].place,1);assert.notEqual(g.turn,0);});

@@ -23,6 +23,7 @@ wss.on('connection',ws=>{let room,me;
     case 'swap':E.swap(room.game,me.id,m.hand,m.up);break;
     case 'ready':E.ready(room.game,me.id);break;
     case 'play':E.play(room.game,me.id,m.ids||[],{aceHigh:m.aceHigh,index:m.index});break;
+    case 'ace':E.chooseAce(room.game,me.id,m.choice);break;
     case 'pickup':E.pickup(room.game,me.id);break;
     case 'slap':E.slap(room.game,me.id);break;
     default:return;}

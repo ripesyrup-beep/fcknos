@@ -14,10 +14,10 @@ test('4 headless bots play a full team game to the end over websockets',async()=
   for(const b of bots){b.send({t:'ready'});
     b.onstate=m=>{const g=m.game;if(!g||g.phase!=='play')return;
       if(g.slap&&g.slap.mine&&g.slap.msLeft>0&&Math.random()<.7){slaps++;return b.send({t:'slap'});}
-      if(g.turn!==g.me.seat)return;moves++;
+      if(g.turn!==g.me.seat)return;if(g.mode==='aceWait')return b.send({t:'ace',choice:Math.random()<.5?'high':'low'});moves++;
       const L=g.me.legal;if(!L.length)return b.send({t:'pickup'});
       if(L[0].blind)return b.send({t:'play',index:0});
-      const pick=L.sort((a,c)=>(a.combo?99:0)-(c.combo?99:0)||parseInt(a.ids[0])-parseInt(c.ids[0]))[0];b.send({t:'play',ids:pick.ids,aceHigh:pick.aceHigh});};}
+      const pick=L.sort((a,c)=>(a.combo?99:0)-(c.combo?99:0)||parseInt(a.ids[0])-parseInt(c.ids[0]))[0];b.send({t:'play',ids:pick.ids});};}
   await wait(()=>bots[0].st.game.phase==='over',60000);
   const g=bots[0].st.game;console.log('moves',moves,'slap attempts',slaps,'winner',JSON.stringify(g.winner),g.log.slice(-4).join(' | '));
   assert.equal(g.winner.team!=null,true);assert.ok(g.teams);
