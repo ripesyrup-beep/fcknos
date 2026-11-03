@@ -14,7 +14,7 @@ Keep 3 in hand while the draw pile lasts. Hand empty → play face-up. Then face
 
 | Card | What it does |
 |---|---|
-| **A** | High card. You choose **high** (only A, 2, 10 beat it) or **low** (anything beats it). |
+| **A** | High card, goes on anything. The **next** player must go **HIGH** (A, 2, 10) or **LOW** (any card that isn't A, 2 or 10) — their choice. |
 | **2** | Wild. Goes on anything **except a 9**. Pile resets — anything goes next. |
 | **9** | Next player must play **3 through 8** (or a 10). No 2 on a 9. |
 | **10** | Burns the pile. You go again. |
@@ -31,4 +31,4 @@ Hit it out of turn — fastest tap wins (4-second window). It makes four of a ki
 
 ---
 Host "House Rules ⚙" toggles (⚑ = my guess, not confirmed by Bryan):
-four-of-a-kind burns (on) · slap window seconds (4) · ⚑ Ace playable on anything (on) · ⚑ 10 allowed on a 9 (on) · ⚑ low Ace counts as 3–8 after a 9 (off)
+four-of-a-kind burns (on) · slap window seconds (4) · ⚑ Ace playable on anything (on) · ⚑ 10 allowed on a 9 (on) · ⚑ Ace allowed on a 9 (off)

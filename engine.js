@@ -5,7 +5,7 @@ const DEFAULTS = {
   fourBurns: true,       // four of a kind (consecutive on pile) burns
   aceAnywhere: true,     // [flag] Ace is a high card: playable on anything except after a 9
   tenOnNine: true,       // [flag] 10 may be played on a 9
-  aceLowOnNine: false,   // [flag] low Ace (1) does not count as 3-8
+  aceLowOnNine: false,   // [flag] Ace may NOT be played on a 9
   sevenRule: 'none',     // Bryan: 7 does nothing special
 };
 function deck(){const d=[];for(const s of 'SHDC')for(let r=2;r<=14;r++)d.push({r,s,id:RN[r]+s});return d;}
@@ -31,16 +31,17 @@ function ready(g,id){if(g.phase!=='swap')return;P(g,id).ready=true;
 // can a single rank (value v, card rank r) go on the pile now?
 function fits(g,r,aceHigh){const R=g.rules;
   if(g.mode==='low'){ // after a 9 or a 3-6-9
-    if(r>=3&&r<=8)return true; if(r===10)return R.tenOnNine; if(r===14&&!aceHigh)return R.aceLowOnNine; return false;}
-  if(r===2||r===10)return true; if(r===14)return R.aceAnywhere||topVal(g)<=(aceHigh?14:1);
+    if(r>=3&&r<=8)return true; if(r===10)return R.tenOnNine; if(r===14)return R.aceLowOnNine; return false;}
+  if(g.mode==='ace')return true; // Ace on pile: next goes HIGH {A,2,10} or LOW {everything else} — player's choice
+  if(r===2||r===10)return true; if(r===14)return R.aceAnywhere||g.mode==='any'||topVal(g)<=14;
   if(g.mode==='any')return true; return r>=topVal(g);}
 function topVal(g){for(let i=g.pile.length-1;i>=0;i--)return g.pile[i].v;return 0;}
 function is369(cs){return cs.length===3&&[3,6,9].every(r=>cs.some(c=>c.r===r));}
 function zone(p,g){if(g&&g.need3S&&p.up.some(c=>c.id==='3S'))return 'up';return p.hand.length?'hand':p.up.length?'up':'down';}
 function legal(g,id){const p=P(g,id),z=zone(p,g),src=p[z];if(z==='down')return [{blind:true}];
   const out=[];const by={};src.forEach(c=>(by[c.r]=by[c.r]||[]).push(c));
-  for(const r in by){const n=+r;for(const ah of n===14?[true,false]:[false])if(fits(g,n,ah)){
-    if(g.need3S&&!by[r].some(c=>c.id==='3S'))continue; out.push({ids:by[r].map(c=>c.id),aceHigh:ah});}}
+  for(const r in by){const n=+r;if(fits(g,n)){
+    if(g.need3S&&!by[r].some(c=>c.id==='3S'))continue; out.push({ids:by[r].map(c=>c.id)});}}
   const t=[3,6,9].map(r=>src.find(c=>c.r===r)); if(t.every(Boolean)&&(!g.need3S||t[0].id==='3S'))out.push({ids:t.map(c=>c.id),combo:true});
   return out;}
 function next(g,from){const n=g.players.length;for(let k=1;k<=n;k++){const p=g.players[(from+k)%n];if(!p.place)return p.seat;}return from;}
@@ -52,14 +53,14 @@ function refill(g,p){while(p.hand.length<3&&g.draw.length)p.hand.push(g.draw.shi
 function burn(g,why){g.burned+=g.pile.length;g.pile=[];g.mode='any';g.slap=null;log(g,'🔥 pile burned ('+why+')');}
 function afterLay(g,p,cards,o={}){ // cards already removed from player; lay on pile and resolve
   const combo=is369(cards)&&o.combo;
-  for(const c of cards)g.pile.push({...c,v:c.r===14?(o.aceHigh===false?1:14):c.r,by:p.seat});
+  for(const c of cards)g.pile.push({...c,v:c.r,by:p.seat});
   log(g,`${p.name} ${o.slap?'SLAPS':'plays'} ${cards.map(c=>RN[c.r]).join(' ')}${combo?' (3-6-9!)':''}`);
   refill(g,p); g.slap=null;
   const top=g.pile[g.pile.length-1].r; let run=0;for(let i=g.pile.length-1;i>=0&&g.pile[i].r===top;i--)run++;
   let again=false;
   if(!combo&&top===10){burn(g,'10');again=true;}
   else if(!combo&&g.rules.fourBurns&&run>=4){burn(g,'four of a kind');again=true;}
-  else {g.mode=combo||top===9?'low':top===2?'any':'norm';
+  else {g.mode=combo||top===9?'low':top===2?'any':top===14?'ace':'norm';
     if(!combo&&run===3){const holder=g.players.find(q=>!q.place&&[...q.hand,...q.up].some(c=>c.r===top));
       g.slap={rank:top,until:g.now()+g.rules.slapMs,hint:!!holder};}}
   checkOut(g,p); if(g.phase==='over')return;
@@ -67,15 +68,15 @@ function afterLay(g,p,cards,o={}){ // cards already removed from player; lay on 
 function play(g,id,ids,o={}){if(g.phase!=='play')throw new Error('not playing');const p=P(g,id);if(g.turn!==p.seat)throw new Error('not your turn');
   const z=zone(p,g);
   if(z==='down'){const c=p.down.splice(o.index||0,1)[0];if(!c)throw new Error('no card');
-    if(fits(g,c.r,c.r===14)||(c.r===14&&fits(g,14,false))){g.need3S=false;return afterLay(g,p,[c],{aceHigh:fits(g,14,true)});}
+    if(fits(g,c.r)){g.need3S=false;return afterLay(g,p,[c]);}
     log(g,`${p.name} flips ${RN[c.r]} — no good, picks up`);p.hand.push(c);return pickup(g,id,true);}
   const cards=ids.map(i=>p[z].find(c=>c.id===i));if(!cards.length||cards.some(c=>!c))throw new Error('cards not in '+z);
   const combo=is369(cards);
   if(!combo){if(cards.some(c=>c.r!==cards[0].r))throw new Error('must be same rank');
-    if(!fits(g,cards[0].r,o.aceHigh!==false))throw new Error('can\'t play that on this pile');}
+    if(!fits(g,cards[0].r))throw new Error('can\'t play that on this pile');}
   if(g.need3S&&!cards.some(c=>c.id==='3S'))throw new Error('first play must include the 3♠');
   g.need3S=false; p[z]=p[z].filter(c=>!ids.includes(c.id));
-  afterLay(g,p,cards,{aceHigh:o.aceHigh!==false,combo});}
+  afterLay(g,p,cards,{combo});}
 function pickup(g,id,force){const p=P(g,id);if(g.turn!==p.seat)throw new Error('not your turn');
   if(!force&&zone(p)!=='down'&&legal(g,id).length)throw new Error('you have a legal play');
   if(!force)log(g,`${p.name} picks up ${g.pile.length}`);p.hand.push(...g.pile);g.pile=[];g.mode='any';g.slap=null;g.turn=next(g,p.seat);}

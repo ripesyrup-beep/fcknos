@@ -19,9 +19,12 @@ test('swap hand<->up then 3♠ holder starts and must play it',()=>{const g=E.ne
 test('multiples of same rank; mixed ranks rejected',()=>{const g=G([['5S','5H','6D'],['KD']]);bad(g,0,['5S','6D']);ok(g,0,['5S','5H']);assert.equal(g.pile.length,2);});
 test('must play equal or higher',()=>{const g=G([['4S','8H'],['KD']],{pile:['7C']});bad(g,0,['4S']);ok(g,0,['8H']);
   const g2=G([['7S'],['KD']],{pile:['7C']});ok(g2,0,['7S']);});
-test('ace high or low',()=>{let g=G([['AS','4C'],['5D','2C','KS']],{pile:['KC']});ok(g,0,['AS'],{aceHigh:true});assert.equal(g.pile.at(-1).v,14);
-  assert.throws(()=>E.play(g,'p1',['KS']));E.play(g,'p1',['2C']);
-  g=G([['AS','4C'],['5D','KS']],{pile:['KC']});ok(g,0,['AS'],{aceHigh:false});assert.equal(g.pile.at(-1).v,1);E.play(g,'p1',['5D']);});
+test('Ace goes on anything; next player goes HIGH (A/2/10) or LOW (anything else)',()=>{
+  for(const nxt of ['AH','2C','10D','3C','4C','5C','6C','7C','8C','9C','JC','QC','KC']){const g=G([['AS','4D'],[nxt,'KS']],{pile:['KD']});
+    ok(g,0,['AS']);assert.equal(g.mode,'ace');E.play(g,'p1',[nxt]);}
+  const g=G([['AS','4D'],['2C','KS'],['9H']],{pile:['KD']});ok(g,0,['AS']);E.play(g,'p1',['2C']);assert.equal(g.mode,'any','2 still wild/resets after Ace');ok(g,2,['9H']);
+  const t=G([['AS','4D'],['10D','KS']],{pile:['QD']});ok(t,0,['AS']);E.play(t,'p1',['10D']);assert.equal(t.pile.length,0,'10 still burns after Ace');
+  const n=G([['AS','4D'],['KS']],{pile:['9D']});bad(n,0,['AS']);});
 test('9: next must be 3-8 (10 allowed), 2 on 9 rejected, K rejected',()=>{const g=G([['9S'],['2C','KD','3H','10C']]);ok(g,0,['9S']);
   bad(g,1,['2C']);bad(g,1,['KD']);ok(g,1,['3H']);
   const g2=G([['9S'],['10C','4D']]);ok(g2,0,['9S']);ok(g2,1,['10C']);assert.equal(g2.pile.length,0);});
