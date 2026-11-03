@@ -1,6 +1,6 @@
 services:
   - type: web
-    name: card-party
+    name: fcknos
     runtime: node
     plan: free
     buildCommand: npm install --omit=dev

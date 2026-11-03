@@ -32,5 +32,5 @@ wss.on('connection',ws=>{let room,me;
 setInterval(()=>{for(const[c,r]of rooms)if(r.members.every(m=>!m.ws)){r.idle=(r.idle||0)+1;if(r.idle>60)rooms.delete(c);}else r.idle=0;},60000).unref();
 srv.shutdown=()=>{wss.clients.forEach(c=>c.terminate());srv.close();};
 return new Promise(res=>srv.listen(port,()=>res(srv)));}
-if(require.main===module)start().then(s=>console.log('Card Party on :'+s.address().port));
+if(require.main===module)start().then(s=>console.log('fcknos on :'+s.address().port));
 module.exports={start};

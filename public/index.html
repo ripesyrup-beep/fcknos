@@ -1,5 +1,5 @@
 <!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no">
-<title>Card Party</title><link rel="manifest" href="manifest.webmanifest"><link rel="icon" href="icon.svg"><link rel="apple-touch-icon" href="icon-192.png">
+<title>fcknos</title><link rel="manifest" href="manifest.webmanifest"><link rel="icon" href="icon.svg"><link rel="apple-touch-icon" href="icon-192.png">
 <meta name="theme-color" content="#0d3b22"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes">
 <style>
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}body{margin:0;font-family:system-ui,sans-serif;color:#f3eed9;min-height:100vh;
@@ -52,7 +52,7 @@ Deal: 3 face-down, 3 face-up on top, 3 in hand. Swap hand ↔ face-up before pla
 • 4 players = teams, partners across (1&3 vs 2&4). Block the next opponent so your partner can play. Partners can't see each other's hands.<br>
 • First out wins; last holding cards is the Shithead.</div>`;
 function render(){const a=$('#app');
- if(!S){a.innerHTML=`<div class="box"><h1>Card <span>Party</span></h1><div class="lbl">Bryan's house rules · Shithead</div>
+ if(!S){a.innerHTML=`<div class="box"><h1>fck<span>nos</span></h1><div class="lbl">Bryan's house rules · Shithead</div>
   <input id="nm" placeholder="Your name" maxlength="14" value="${localStorage.nm||''}"><button id="new">NEW PARTY</button>
   <div class="lbl" style="margin-top:14px">or join with a code</div><input id="cd" inputmode="numeric" maxlength="4" placeholder="1234"><button class="alt" id="join">JOIN</button>
   <button class="alt" id="rb">RULES</button>${showRules?RULES:''}</div>`;
@@ -60,7 +60,7 @@ function render(){const a=$('#app');
   $('#new').onclick=()=>nm()&&tx({t:'create',name:localStorage.nm});$('#join').onclick=()=>nm()&&($('#cd').value.length===4?tx({t:'join',code:$('#cd').value,name:localStorage.nm}):toast('4-digit code'));
   $('#rb').onclick=()=>{showRules=!showRules;render()};return;}
  const host=S.host===S.you,g=S.game;
- if(!g){a.innerHTML=`<div class="box"><h1>Card <span>Party</span></h1><div class="lbl">Party code</div><div class="code">${S.code}</div>
+ if(!g){a.innerHTML=`<div class="box"><h1>fck<span>nos</span></h1><div class="lbl">Party code</div><div class="code">${S.code}</div>
   <div class="lbl">Players (${S.lobby.length}/6)${S.lobby.length===4?' · TEAMS 1&3 vs 2&4':''}</div>
   ${S.lobby.map((p,i)=>`<div class="pl ${S.lobby.length===4?'t'+i%2:''}">Seat ${i+1}: ${p.name}${p.id===S.host?' 👑':''}${p.on?'':' (away)'}</div>`).join('')}
   ${host?`<button id="go" ${S.lobby.length<2?'disabled':''}>START GAME</button><button class="alt" id="ob">HOUSE RULES ⚙</button>`:'<div class="status">Waiting for host to start…</div>'}

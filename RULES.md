@@ -1,4 +1,4 @@
-# Card Party — Bryan's House Rules (Shithead / Palace)
+# fcknos — Bryan's House Rules (Shithead / Palace)
 
 **Deck:** 52 cards, no jokers. 2–6 players. **4 players = teams**, partners sit across (seats 1 & 3 vs 2 & 4).
 
