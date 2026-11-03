@@ -1,0 +1,23 @@
+{
+  "name": "card-party",
+  "version": "1.0.0",
+  "description": "",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "test": "node --test test/*.test.js"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "dependencies": {
+    "ws": "^8.22.1"
+  },
+  "devDependencies": {
+    "puppeteer-core": "^25.16.0"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}
