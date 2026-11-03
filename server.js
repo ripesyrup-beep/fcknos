@@ -26,6 +26,9 @@ wss.on('connection',ws=>{let room,me;
     case 'ace':E.chooseAce(room.game,me.id,m.choice);break;
     case 'pickup':E.pickup(room.game,me.id);break;
     case 'slap':E.slap(room.game,me.id);break;
+    case 'rig':{if(process.env.FCKNOS_TEST_HOOKS!=='1')return;const g=room.game,p=g.players.find(x=>x.id===me.id);// test-only: put A♠ in my hand, my turn
+      const all=g.players.flatMap(x=>[x.hand,x.up,x.down]).concat([g.draw,g.pile]);for(const z of all){const i=z.findIndex(c=>c.id==='AS');if(i>=0)z.splice(i,1);}
+      p.hand.push({r:14,s:'S',id:'AS'});g.phase='play';g.turn=p.seat;g.need3S=false;g.mode='any';g.pendingAce=null;break;}
     default:return;}
    }catch(e){send(ws,{t:'err',msg:e&&e.message||'Not allowed'});}
    if(room){push(room);const g=room.game;if(g&&g.slap){clearTimeout(room.st);room.st=setTimeout(()=>push(room),g.slap.until-Date.now()+50);room.st.unref();}}});

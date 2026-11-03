@@ -73,7 +73,7 @@ function render(){const a=$('#app');
  const others=g.players.filter(p=>p.seat!==my.seat).map(p=>`<div class="pl ${g.turn===p.seat&&g.phase==='play'?'turn':''} ${g.teams?'t'+p.team:''}"><b>${p.name}</b>${p.place?' ✔#'+p.place:''}<br>
    <div class="row" style="gap:2px">${p.up.map(c=>card(c,'mini')).join('')||Array(p.down).fill(card(null,'mini')).join('')}</div>✋${p.hand} ⬇${p.down}${g.phase==='swap'?(p.ready?' ✅':' …'):''}</div>`).join('');
  let status=g.phase==='swap'?'Swap hand ↔ face-up, then READY':g.phase==='over'?(g.winner.team!=null?`TEAM ${g.winner.team+1} WINS! (${g.players.filter(p=>p.team===g.winner.team).map(p=>p.name).join(' & ')})`:`${g.players[g.winner.seat].name} WINS!`)
-  :myTurn?(g.mode==='low'?'YOUR TURN — play 3 to 8':g.mode==='aceHigh'?'YOUR TURN — HIGH: A, 2 or 10':g.mode==='aceLow'?'YOUR TURN — LOW: no A, 2, 10':g.mode==='aceWait'?'Call your ACE':'YOUR TURN':'YOUR TURN'):`${g.players[g.turn].name}'s turn`;
+  :myTurn?(g.mode==='low'?'YOUR TURN — play 3 to 8':g.mode==='aceHigh'?'YOUR TURN — HIGH: A, 2 or 10':g.mode==='aceLow'?'YOUR TURN — LOW: no A, 2, 10':g.mode==='aceWait'?'Call your ACE':'YOUR TURN'):`${g.players[g.turn].name}'s turn`;
  a.innerHTML=`<div class="row">${others}</div>
  <div class="status" style="margin-top:8px">${status}</div>
  <div class="row"><div class="lbl">Deck ${g.draw} · Pile ${g.pileCount} · Burned ${g.burned}${g.teams?' · You: Team '+(me.team+1):''}</div></div>
@@ -87,7 +87,7 @@ function render(){const a=$('#app');
  ${g.mode==='aceWait'&&g.pendingAce===my.seat?`<div style="position:fixed;inset:0;background:#000a;z-index:8;display:flex;align-items:center;justify-content:center"><div class="box" style="background:#0d3b22;padding:22px;border-radius:18px;border:3px solid #f5c84c"><div class="status">You played an ACE.<br>Next player must go…</div><button id="ahi">HIGH<br><small>A, 2 or 10</small></button><button id="alo" class="alt">LOW<br><small>anything but A, 2, 10</small></button></div></div>`:''}
  ${g.slap&&g.slap.mine&&g.slap.msLeft>0?`<button id="slap">SLAP ${RN[g.slap.rank]}!</button>`:''}
  <div class="bar">${g.phase==='swap'?`<button id="rdy" ${me.ready?'disabled':''}>${me.ready?'WAITING…':'READY'}</button>`:
-  g.phase==='play'?``<button id="pl" ${myTurn&&sel.length?'':'disabled'}>PLAY ${sel.length||''}</button>`
+  g.phase==='play'?`<button id="pl" ${myTurn&&sel.length?'':'disabled'}>PLAY ${sel.length||''}</button>
   <button class="alt" id="pu" ${myTurn&&g.pileCount&&g.mode!=='aceWait'?'':'disabled'}>PICK UP</button>`:''}</div>`;
  $('#rb').onclick=()=>{showRules=!showRules;render()};
  if($('#again'))$('#again').onclick=()=>tx({t:'again'});
