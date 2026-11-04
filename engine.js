@@ -28,9 +28,10 @@ function swap(g,id,handId,upId){if(g.phase!=='swap')throw new Error('not swap ph
   [p.hand[hi],p.up[ui]]=[p.up[ui],p.hand[hi]];}
 function ready(g,id){if(g.phase!=='swap')return;P(g,id).ready=true;
   if(g.players.every(p=>p.ready)){g.phase='play';
-    const s=g.players.find(p=>[...p.hand,...p.up].some(c=>c.id==='3S'));
-    g.turn=s?s.seat:g.players.reduce((b,p)=>Math.min(...p.hand.map(c=>c.r))<Math.min(...b.hand.map(c=>c.r))?p:b).seat;
-    g.need3S=!!s; log(g,`${g.players[g.turn].name} starts`+(s?' with the 3♠':''));}}
+    // lowest card in a dealt hand starts: rank order 3..9 J Q K A 2 10, suit tiebreak S C H D
+    const ORD=[3,4,5,6,7,8,9,11,12,13,14,2,10],SU='SCHD',key=c=>ORD.indexOf(c.r)*4+SU.indexOf(c.s);let best=null,bp=null;
+    for(const p of g.players)for(const c of p.hand)if(!best||key(c)<key(best)){best=c;bp=p;}
+    g.turn=bp.seat;g.need3S=best.id; log(g,`${bp.name} starts with the ${RN[best.r]}${{S:'♠',C:'♣',H:'♥',D:'♦'}[best.s]}`);}}
 // can a single rank (value v, card rank r) go on the pile now?
 function fits(g,r,aceHigh){const R=g.rules;
   if(g.mode==='low'){ // after a 9 or a 3-6-9
@@ -47,15 +48,15 @@ function straight(cs){if(cs.length<4)return null;const rs=cs.map(c=>c.r);if(new 
   for(const aceLow of [false,true]){const v=c=>c.r===14&&aceLow?1:c.r;const sorted=cs.slice().sort((a,b)=>v(a)-v(b));
     if(sorted.every((c,i)=>i===0||v(c)===v(sorted[i-1])+1))return {low:sorted[0],high:sorted[sorted.length-1],sorted};}return null;}
 function is369(cs){return cs.length===3&&[3,6,9].every(r=>cs.some(c=>c.r===r));}
-function zone(p,g){if(g&&g.need3S&&p.up.some(c=>c.id==='3S'))return 'up';return p.hand.length?'hand':p.up.length?'up':'down';}
+function zone(p,g){return p.hand.length?'hand':p.up.length?'up':'down';}
 function legal(g,id){const p=P(g,id),z=zone(p,g),src=p[z];if(z==='down')return [{blind:true}];
   const out=[];const by={};src.forEach(c=>(by[c.r]=by[c.r]||[]).push(c));
   for(const r in by){const n=+r;if(fits(g,n)){
-    if(g.need3S&&!by[r].some(c=>c.id==='3S'))continue; out.push({ids:by[r].map(c=>c.id)});}}
+    if(g.need3S&&!by[r].some(c=>c.id===g.need3S))continue; out.push({ids:by[r].map(c=>c.id)});}}
   if(g.rules.straights){const one={};src.forEach(c=>{one[c.r]=one[c.r]||c;});
     for(const lowV of [1,...Array.from({length:13},(_,i)=>i+2)]){const run=[];for(let v=lowV;v<=14;v++){const c=one[v===1?14:v];if(!c||(v===14&&lowV===1))break;run.push(c);
-      if(run.length>=4){const st=straight(run);if(st&&stFits(g,st)&&(!g.need3S||run.some(c=>c.id==='3S')))out.push({ids:run.map(c=>c.id),straight:true});}}}}
-  const t=[3,6,9].map(r=>src.find(c=>c.r===r)); if(t.every(Boolean)&&(!g.need3S||t[0].id==='3S'))out.push({ids:t.map(c=>c.id),combo:true});
+      if(run.length>=4){const st=straight(run);if(st&&stFits(g,st)&&(!g.need3S||run.some(c=>c.id===g.need3S)))out.push({ids:run.map(c=>c.id),straight:true});}}}}
+  const t=[3,6,9].map(r=>src.find(c=>c.r===r)); if(t.every(Boolean)&&(!g.need3S||t.some(c=>c.id===g.need3S)))out.push({ids:t.map(c=>c.id),combo:true});
   return out;}
 function next(g,from){const n=g.players.length;for(let k=1;k<=n;k++){const p=g.players[(from+k)%n];if(!p.place)return p.seat;}return from;}
 function checkOut(g,p){if(!p.place&&!p.hand.length&&!p.up.length&&!p.down.length){g.places.push(p.seat);p.place=g.places.length;log(g,`${p.name} is OUT (#${p.place})`);}
@@ -97,7 +98,7 @@ function play(g,id,ids,o={}){if(g.phase!=='play')throw new Error('not playing');
   if(!combo){if(cards.some(c=>c.r!==cards[0].r)){st=g.rules.straights&&straight(cards);if(!st)throw new Error('play one rank, a 3-6-9, or a straight of 4+');
       if(!stFits(g,st))throw new Error(g.mode==='low'?'after a 9 the straight must END on 3-8':'lowest card of the straight can\'t go on this pile');}
     else if(!fits(g,cards[0].r))throw new Error('can\'t play that on this pile');}
-  if(g.need3S&&!cards.some(c=>c.id==='3S'))throw new Error('first play must include the 3♠');
+  if(g.need3S&&!cards.some(c=>c.id===g.need3S))throw new Error('first play must include the lowest card ('+g.need3S+')');
   g.need3S=false; p[z]=p[z].filter(c=>!ids.includes(c.id));
   afterLay(g,p,cards,{combo,straight:!!st});}
 function pickup(g,id,force){const p=P(g,id);if(g.turn!==p.seat)throw new Error('not your turn');if(g.mode==='aceWait')throw new Error('call the ACE first');

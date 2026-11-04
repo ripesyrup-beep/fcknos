@@ -9,13 +9,20 @@ const ok=(g,i,ids,o)=>E.play(g,'p'+i,ids,o),bad=(g,i,ids,o)=>assert.throws(()=>E
 test('deal 3 down / 3 up / 3 hand, rest is draw pile, 52 cards',()=>{const g=E.newGame([{id:'a'},{id:'b'},{id:'c'}]);
   g.players.forEach(p=>{assert.equal(p.down.length,3);assert.equal(p.up.length,3);assert.equal(p.hand.length,3)});assert.equal(g.draw.length,52-27);
   assert.equal(new Set([...g.draw,...g.players.flatMap(p=>[...p.up,...p.down,...p.hand])].map(c=>c.id)).size,52);});
+test('starter = lowest hand card, suit order S C H D, then 4s',()=>{const g=E.newGame([{id:'a',name:'a'},{id:'b',name:'b'},{id:'c',name:'c'}]);
+  const C=id=>({r:{J:11,Q:12,K:13,A:14}[id.slice(0,-1)]||+id.slice(0,-1),s:id.slice(-1),id});
+  g.players[0].hand=['4S','5C','KD'].map(C);g.players[1].hand=['4H','QS','2C'].map(C);g.players[2].hand=['4C','10S','AH'].map(C);g.players[0].up=['3S','3C','3H'].map(C);
+  for(const p of g.players)E.ready(g,p.id);assert.equal(g.turn,0,'4S beats 4C/4H; face-up 3s ignored');assert.equal(g.need3S,'4S');
+  assert.throws(()=>E.play(g,'a',['5C']),/lowest/);E.play(g,'a',['4S']);
+  const h=E.newGame([{id:'a',name:'a'},{id:'b',name:'b'}]);h.players[0].hand=['3D','JC','QC'].map(C);h.players[1].hand=['3C','9C','8C'].map(C);
+  for(const p of h.players)E.ready(h,p.id);assert.equal(h.turn,1,'3C beats 3D');});
 test('swap hand<->up then 3♠ holder starts and must play it',()=>{const g=E.newGame([{id:'a',name:'a'},{id:'b',name:'b'}]);
   const pa=g.players[0],pb=g.players[1];const all=[...g.draw,...pa.hand,...pa.up,...pa.down,...pb.hand,...pb.up,...pb.down];
   // force 3S into b's hand
   const i=pb.hand.findIndex(()=>1);const s3=all.find(c=>c.id==='3S');for(const z of[g.draw,pa.hand,pa.up,pa.down,pb.up,pb.down,pb.hand]){const k=z.indexOf(s3);if(k>=0){z[k]=pb.hand[0];pb.hand[0]=s3;break;}}
   const h=pa.hand[1].id,u=pa.up[0].id;E.swap(g,'a',h,u);assert.equal(pa.up[0].id,h);
   E.ready(g,'a');assert.equal(g.phase,'swap');E.ready(g,'b');assert.equal(g.phase,'play');assert.equal(g.turn,1);
-  const other=pb.hand.find(c=>c.r!==3);if(other)assert.throws(()=>E.play(g,'b',[other.id]),/3♠/);E.play(g,'b',['3S']);assert.equal(g.pile.at(-1).id,'3S');});
+  const other=pb.hand.find(c=>c.r!==3);if(other)assert.throws(()=>E.play(g,'b',[other.id]),/lowest/);E.play(g,'b',['3S']);assert.equal(g.pile.at(-1).id,'3S');});
 test('multiples of same rank; mixed ranks rejected',()=>{const g=G([['5S','5H','6D'],['KD']]);bad(g,0,['5S','6D']);ok(g,0,['5S','5H']);assert.equal(g.pile.length,2);});
 test('must play equal or higher',()=>{const g=G([['4S','8H'],['KD']],{pile:['7C']});bad(g,0,['4S']);ok(g,0,['8H']);
   const g2=G([['7S'],['KD']],{pile:['7C']});ok(g2,0,['7S']);});

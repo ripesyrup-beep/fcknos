@@ -5,7 +5,7 @@
 **Deal:** 3 face-down, 3 face-up on top of them, 3 in hand. The rest is the draw pile.
 Before play you may swap hand cards with your face-up cards.
 
-**Start:** whoever holds the **3♠** goes first and must play it (can add other 3s).
+**Start:** whoever holds the **lowest card in their hand** goes first and must play it (can add others of that rank). Order 3 4 5 6 7 8 9 J Q K A 2 10; suit tiebreak ♠ ♣ ♥ ♦ (3♠, 3♣, 3♥, 3♦, then 4♠…). Only the 3 hand cards count, after swapping.
 
 **Your turn:** play one card, or several of the **same rank**, equal to or higher than the top card.
 Order (low → high): 3 4 5 6 7 8 9 J Q K, then the high cards **A 2 10**. A 2 resets the pile so anything goes on it.
