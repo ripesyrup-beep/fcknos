@@ -70,6 +70,15 @@ test('4 players = teams, partners across (seats 1&3 vs 2&4); team wins when both
   E.play(t,'p2',['KS']);assert.equal(t.phase,'over');assert.equal(t.winner.team,0);});
 test('partners cannot see each other hands',()=>{const g=E.newGame([1,2,3,4].map(i=>({id:'p'+i,name:'x'})));const v=E.view(g,'p1');
   assert.ok(Array.isArray(v.me.hand));assert.ok(v.players.every(p=>typeof p.hand==='number'));assert.ok(!JSON.stringify(v).includes(JSON.stringify(g.players[2].hand[0])));});
+test('straights on a 9: last card decides (2-3-4-5 sneaky ok, 8-9-10-J no)',()=>{
+  let g=G([['2C','3D','4H','5S','KC'],['9C']],{pile:['9D']});g.mode='low';
+  assert.ok(E.legal(g,'p0').some(o=>o.straight&&o.ids.length===4&&o.ids.includes('2C')),'2-3-4-5 listed on a 9');
+  ok(g,0,['2C','3D','4H','5S']);assert.equal(g.pile.at(-1).r,5);
+  g=G([['8C','9D','10H','JS','KC'],['9C']],{pile:['9D']});g.mode='low';
+  assert.ok(!E.legal(g,'p0').some(o=>o.straight),'8-9-10-J not on a 9');bad(g,0,['8C','9D','10H','JS']);
+  g=G([['4C','5D','6H','7S','8C'],['9C']],{pile:['9D']});g.mode='low';ok(g,0,['4C','5D','6H','7S','8C']);
+  g=G([['2C','3D','4H','5S'],['9C']],{pile:['KD']});ok(g,0,['2C','3D','4H','5S']);
+});
 test('straights: 4+ in a row, lowest card must fit; ace low or high, no wrap; 2 not wild inside; 10 on top no burn',()=>{
   let g=G([['5C','6D','7H','8S','KD'],['9C']],{pile:['5S']});ok(g,0,['5C','6D','7H','8S']);assert.equal(g.pile.at(-1).r,8);assert.equal(g.turn,1);
   g=G([['5C','6D','7H','8S'],['9C']],{pile:['6S']});bad(g,0,['5C','6D','7H','8S'],'lowest 5 < 6');
@@ -79,7 +88,7 @@ test('straights: 4+ in a row, lowest card must fit; ace low or high, no wrap; 2 
   g=G([['JC','QD','KH','AS'],['9C']],{pile:['10D','JD']});ok(g,0,['JC','QD','KH','AS']);assert.equal(g.mode,'aceWait','ace on top of a straight -> call');
   g=G([['QC','KD','AH','2S'],['9C']]);bad(g,0,['QC','KD','AH','2S'],'no wraparound');
   g=G([['2C','3D','4H','5S'],['9C']],{pile:['KD']});ok(g,0,['2C','3D','4H','5S']);assert.equal(g.mode,'norm','2 in a straight does not reset the pile');assert.equal(g.pile.at(-1).r,5);
-  g=G([['2C','3D','4H','5S'],['9C']],{pile:['9D']});bad(g,0,['2C','3D','4H','5S'],'lowest 2 cannot go on a 9');
+  g=G([['2C','3D','4H','5S'],['9C']],{pile:['9D']});g.mode='low';ok(g,0,['2C','3D','4H','5S']); // sneaky: last card 5 decides on a 9
   g=G([['7C','8D','9H','10S','4C'],['9C']],{pile:['6D']});ok(g,0,['7C','8D','9H','10S']);assert.equal(g.pile.length,0,'straight ENDING in 10 burns');assert.equal(g.turn,0,'and goes again');
   g=G([['8C','9D','10H','JS'],['KC']],{pile:['6D']});ok(g,0,['8C','9D','10H','JS']);assert.equal(g.pile.length,5,'10 in the middle does nothing');
   g=G([['6C','7D','8H','9S'],['KC','5D']],{pile:['4D']});ok(g,0,['6C','7D','8H','9S']);assert.equal(g.mode,'low','straight ending in 9 -> next 3-8');bad(g,1,['KC']);ok(g,1,['5D']);

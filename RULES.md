@@ -11,6 +11,7 @@ Before play you may swap hand cards with your face-up cards.
 Order (low → high): 3 4 5 6 7 8 9 J Q K, then the high cards **A 2 10**. A 2 resets the pile so anything goes on it.
 
 **Straights:** 4 or more in a row (any suits, e.g. 5-6-7-8) in one move, as long as the **lowest** card could be played on the pile.
+**Exception — on a 9 (next must be 3–8):** the straight's **last** card decides. 2-3-4-5 is a legal sneaky play on a 9 (ends on 5); 8-9-10-J is not (ends on J).
 Ace can be low (A-2-3-4) or high (J-Q-K-A), no wraparound (Q-K-A-2 is not a straight).
 Only the **last (highest) card** of a straight has power: ends in **10** → burns, you go again; ends in **9** → next plays 3–8; ends in **A** → you call HIGH/LOW.
 Specials in the middle do nothing (a 2 in the middle is just a 2). Otherwise a straight never burns.

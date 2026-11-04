@@ -7,7 +7,7 @@ const DEFAULTS = {
   tenOnNine: true,       // [flag] 10 may be played on a 9
   aceLowOnNine: false,   // [flag] Ace may NOT be played on a 9
   sevenRule: 'none',     // Bryan: 7 does nothing special
-  straights: true,       // 4+ consecutive ranks in one move; lowest card must fit the pile
+  straights: true,       // 4+ consecutive ranks in one move; lowest card must fit the pile (after a 9: last card must be 3-8)
   slapMinOnPile: 1,      // [flag] slap-and-close: N matching on top (N>=this) + you hold the other 4-N
   cycleLimit: 30,        // stalemate guard: after this many pick-ups with no burn, the pile is burned
 };
@@ -40,6 +40,8 @@ function fits(g,r,aceHigh){const R=g.rules;
   if(r===2||r===10)return true; if(r===14)return R.aceAnywhere||g.mode==='any'||topVal(g)<=14;
   if(g.mode==='any')return true; return (r===10?16:r)>=topVal(g);}
 function topVal(g){for(let i=g.pile.length-1;i>=0;i--)return g.pile[i].v;return 0;}
+// on a 9 / 3-6-9 (next must be 3-8) the straight's LAST card decides (2-3-4-5 is a sneaky play on a 9); otherwise the lowest card must fit
+function stFits(g,st){return g.mode==='low'?fits(g,st.high.r):fits(g,st.low.r);}
 // straight: 4+ distinct consecutive ranks, Ace low (A-2-3-4) or high (J-Q-K-A), no wraparound. Returns {low,high} card or null
 function straight(cs){if(cs.length<4)return null;const rs=cs.map(c=>c.r);if(new Set(rs).size!==rs.length)return null;
   for(const aceLow of [false,true]){const v=c=>c.r===14&&aceLow?1:c.r;const sorted=cs.slice().sort((a,b)=>v(a)-v(b));
@@ -52,7 +54,7 @@ function legal(g,id){const p=P(g,id),z=zone(p,g),src=p[z];if(z==='down')return [
     if(g.need3S&&!by[r].some(c=>c.id==='3S'))continue; out.push({ids:by[r].map(c=>c.id)});}}
   if(g.rules.straights){const one={};src.forEach(c=>{one[c.r]=one[c.r]||c;});
     for(const lowV of [1,...Array.from({length:13},(_,i)=>i+2)]){const run=[];for(let v=lowV;v<=14;v++){const c=one[v===1?14:v];if(!c||(v===14&&lowV===1))break;run.push(c);
-      if(run.length>=4){const st=straight(run);if(st&&fits(g,st.low.r)&&(!g.need3S||run.some(c=>c.id==='3S')))out.push({ids:run.map(c=>c.id),straight:true});}}}}
+      if(run.length>=4){const st=straight(run);if(st&&stFits(g,st)&&(!g.need3S||run.some(c=>c.id==='3S')))out.push({ids:run.map(c=>c.id),straight:true});}}}}
   const t=[3,6,9].map(r=>src.find(c=>c.r===r)); if(t.every(Boolean)&&(!g.need3S||t[0].id==='3S'))out.push({ids:t.map(c=>c.id),combo:true});
   return out;}
 function next(g,from){const n=g.players.length;for(let k=1;k<=n;k++){const p=g.players[(from+k)%n];if(!p.place)return p.seat;}return from;}
@@ -93,7 +95,7 @@ function play(g,id,ids,o={}){if(g.phase!=='play')throw new Error('not playing');
   const cards=ids.map(i=>p[z].find(c=>c.id===i));if(!cards.length||cards.some(c=>!c))throw new Error('cards not in '+z);
   const combo=is369(cards);let st=null;
   if(!combo){if(cards.some(c=>c.r!==cards[0].r)){st=g.rules.straights&&straight(cards);if(!st)throw new Error('play one rank, a 3-6-9, or a straight of 4+');
-      if(!fits(g,st.low.r))throw new Error('lowest card of the straight can\'t go on this pile');}
+      if(!stFits(g,st))throw new Error(g.mode==='low'?'after a 9 the straight must END on 3-8':'lowest card of the straight can\'t go on this pile');}
     else if(!fits(g,cards[0].r))throw new Error('can\'t play that on this pile');}
   if(g.need3S&&!cards.some(c=>c.id==='3S'))throw new Error('first play must include the 3♠');
   g.need3S=false; p[z]=p[z].filter(c=>!ids.includes(c.id));
