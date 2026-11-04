@@ -16,7 +16,9 @@ function shuffle(a,rng=Math.random){for(let i=a.length-1;i>0;i--){const j=Math.f
 function newGame(players,opts={},rng){
   const rules={...DEFAULTS,...(opts.rules||{})};
   const d=opts.deck||shuffle(deck(),rng);
-  const ps=players.map((p,i)=>({id:p.id,name:p.name,bot:!!p.bot,seat:i,down:d.splice(0,3),up:d.splice(0,3),hand:d.splice(0,3),ready:false,place:0}));
+  const ps=players.map((p,i)=>({id:p.id,name:p.name,bot:!!p.bot,seat:i,down:d.splice(0,3),up:d.splice(0,3),hand:d.splice(0,3),ready:false,place:0,draw:[]}));
+  // rest of the deck split evenly into each player's OWN draw pile; leftovers one at a time from the first player
+  d.forEach((c,i)=>ps[i%ps.length].draw.push(c));d.length=0;
   const teams=ps.length===4;
   ps.forEach(p=>p.team=teams?p.seat%2:null);
   return {rules,players:ps,draw:d,pile:[],burned:0,phase:'swap',turn:-1,mode:'any',log:[],slap:null,first:true,places:[],winner:null,teams,now:()=>Date.now()};
@@ -63,7 +65,7 @@ function checkOut(g,p){if(!p.place&&!p.hand.length&&!p.up.length&&!p.down.length
   const left=g.players.filter(q=>!q.place);
   if(g.teams){for(const t of [0,1])if(g.players.filter(q=>q.team===t).every(q=>q.place)){g.phase='over';g.winner={team:t};log(g,`Team ${t+1} wins!`);return;}}
   if(left.length<=1){g.phase='over';if(left[0]){left[0].place=g.players.length;log(g,`${left[0].name} is the Shithead`);}g.winner={seat:g.places[0]};}}
-function refill(g,p){while(p.hand.length<3&&g.draw.length)p.hand.push(g.draw.shift());}
+function refill(g,p){while(p.hand.length<3&&p.draw.length)p.hand.push(p.draw.shift());}
 function burn(g,why){g.burned+=g.pile.length;g.pile=[];g.mode='any';g.pendingAce=null;g.slap=null;log(g,'🔥 pile burned ('+why+')');}
 function afterLay(g,p,cards,o={}){ // cards already removed from player; lay on pile and resolve
   const combo=is369(cards)&&o.combo;const st=o.straight?straight(cards):null;
@@ -83,8 +85,8 @@ function afterLay(g,p,cards,o={}){ // cards already removed from player; lay on 
   flip(g,p); checkOut(g,p); if(g.phase==='over')return;
   if(g.mode==='aceWait'){g.turn=p.seat;return;} // ace player must choose HIGH/LOW
   g.turn=again&&!p.place?p.seat:next(g,p.seat);}
-// draw pile gone + hand empty -> pick up all face-up cards into hand at once
-function flip(g,p){if(!p.hand.length&&!g.draw.length&&p.up.length){p.hand=p.up;p.up=[];log(g,`${p.name} picks up their face-up cards`);}}
+// own draw pile gone + hand empty -> pick up all face-up cards into hand at once
+function flip(g,p){if(!p.hand.length&&!p.draw.length&&p.up.length){p.hand=p.up;p.up=[];log(g,`${p.name} picks up their face-up cards`);}}
 function chooseAce(g,id,choice){const p=P(g,id);if(g.mode!=='aceWait'||g.pendingAce!==p.seat)throw new Error('no ace to call');
   if(choice!=='high'&&choice!=='low')throw new Error('HIGH or LOW');g.mode=choice==='high'?'aceHigh':'aceLow';g.pendingAce=null;
   log(g,`${p.name}: ACE → ${choice.toUpperCase()}`);g.turn=next(g,p.seat);}
@@ -113,9 +115,9 @@ function slap(g,id){const p=P(g,id);const s=g.slap;
   const cs=slapCards(g,p);if(!cs)throw new Error('you can\'t close it');const src=p.hand.length?p.hand:p.up;
   for(const c of cs)src.splice(src.indexOf(c),1);g.pendingAce=null;afterLay(g,p,cs,{slap:true,close:true});}
 function view(g,id){const me=g.players.find(p=>p.id===id);
-  return {phase:g.phase,rules:g.rules,teams:g.teams,turn:g.turn,mode:g.mode,draw:g.draw.length,burned:g.burned,need3S:g.need3S,pendingAce:g.pendingAce,
+  return {phase:g.phase,rules:g.rules,teams:g.teams,turn:g.turn,mode:g.mode,draw:me?me.draw.length:0,burned:g.burned,need3S:g.need3S,pendingAce:g.pendingAce,
     pile:g.pile.slice(-6).map(c=>({id:c.id,r:c.r,v:c.v})),pileCount:g.pile.length,log:g.log.slice(-12),winner:g.winner,
     slap:g.slap&&{rank:g.slap.rank,need:g.slap.need,msLeft:g.slap.until-g.now(),mine:!!me&&!!slapCards(g,me)},
-    players:g.players.map(p=>({seat:p.seat,name:p.name,bot:p.bot,team:p.team,up:p.up,down:p.down.length,hand:p.hand.length,ready:p.ready,place:p.place})),
+    players:g.players.map(p=>({seat:p.seat,name:p.name,bot:p.bot,team:p.team,up:p.up,down:p.down.length,hand:p.hand.length,draw:p.draw.length,ready:p.ready,place:p.place})),
     me:me&&{seat:me.seat,hand:me.hand.slice().sort((a,b)=>a.r-b.r),legal:g.phase==='play'&&g.turn===me.seat?legal(g,id):[]}};}
 module.exports={straight,slapCards,chooseAce,DEFAULTS,deck,newGame,swap,ready,play,pickup,slap,legal,view,fits,is369,RN};

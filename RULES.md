@@ -2,7 +2,7 @@
 
 **Deck:** 52 cards, no jokers. 2–6 players. **4 players = teams**, partners sit across (seats 1 & 3 vs 2 & 4).
 
-**Deal:** 3 face-down, 3 face-up on top of them, 3 in hand. The rest is the draw pile.
+**Deal:** 3 face-down each, then 6 more cards you pick up and choose 3 to lay face-up on the face-down ones (the other 3 stay in hand; in the app: swap hand ↔ face-up until happy, then READY). The rest of the deck is split evenly into each player's **own draw pile**; leftover cards go one at a time starting from the first player. You only ever draw from your own pile.
 Before play you may swap hand cards with your face-up cards.
 
 **Start:** whoever holds the **lowest card in their hand** goes first and must play it (can add others of that rank). Order 3 4 5 6 7 8 9 J Q K A 2 10; suit tiebreak ♠ ♣ ♥ ♦ (3♠, 3♣, 3♥, 3♦, then 4♠…). Only the 3 hand cards count, after swapping.
@@ -15,8 +15,8 @@ Order (low → high): 3 4 5 6 7 8 9 J Q K, then the high cards **A 2 10**. A 2 r
 Ace can be low (A-2-3-4) or high (J-Q-K-A), no wraparound (Q-K-A-2 is not a straight).
 Only the **last (highest) card** of a straight has power: ends in **10** → burns, you go again; ends in **9** → next plays 3–8; ends in **A** → you call HIGH/LOW.
 Specials in the middle do nothing (a 2 in the middle is just a 2). Otherwise a straight never burns.
-Keep 3 in hand while the draw pile lasts — you only draw once you're down to 2 or fewer, then refill to 3.
-Draw pile gone and hand empty → pick up **all three face-up cards at once** into your hand.
+Keep 3 in hand while your own draw pile lasts — you only draw once you're down to 2 or fewer, then refill to 3.
+Your own draw pile gone and hand empty → pick up **all three face-up cards at once** into your hand.
 When those are gone, play face-down cards blind, one at a time (a blind card that doesn't fit = pick up the pile plus that card).
 **Can't play, or don't want to? Pick up the whole pile.**
 

@@ -3,12 +3,12 @@ const C=s=>{const m=s.match(/^(10|[2-9JQKA])([SHDC])$/);return{r:{J:11,Q:12,K:13
 // build a game in play phase with explicit hands
 function G(hands,o={}){const n=hands.length;const g=E.newGame(hands.map((_,i)=>({id:'p'+i,name:'P'+i})),{rules:o.rules});
   g.players.forEach((p,i)=>{p.hand=hands[i].map(C);p.up=(o.up?.[i]||[]).map(C);p.down=(o.down?.[i]||['KC']).map(C);p.ready=true;});
-  g.draw=(o.draw||[]).map(C);g.phase='play';g.turn=o.turn||0;g.need3S=false;g.pile=(o.pile||[]).map(s=>{const c=C(s);return{...c,v:c.r};});
+  g.draw=[];g.players.forEach(p=>p.draw=[]);g.players[0].draw=(o.draw||[]).map(C);g.phase='play';g.turn=o.turn||0;g.need3S=false;g.pile=(o.pile||[]).map(s=>{const c=C(s);return{...c,v:c.r};});
   g.mode=o.mode||(g.pile.length?(g.pile.at(-1).r===9?'low':g.pile.at(-1).r===2?'any':'norm'):'any');if(o.now)g.now=o.now;return g;}
 const ok=(g,i,ids,o)=>E.play(g,'p'+i,ids,o),bad=(g,i,ids,o)=>assert.throws(()=>E.play(g,'p'+i,ids,o));
 test('deal 3 down / 3 up / 3 hand, rest is draw pile, 52 cards',()=>{const g=E.newGame([{id:'a'},{id:'b'},{id:'c'}]);
-  g.players.forEach(p=>{assert.equal(p.down.length,3);assert.equal(p.up.length,3);assert.equal(p.hand.length,3)});assert.equal(g.draw.length,52-27);
-  assert.equal(new Set([...g.draw,...g.players.flatMap(p=>[...p.up,...p.down,...p.hand])].map(c=>c.id)).size,52);});
+  g.players.forEach(p=>{assert.equal(p.down.length,3);assert.equal(p.up.length,3);assert.equal(p.hand.length,3)});assert.equal(g.draw.length,0);assert.deepEqual(g.players.map(p=>p.draw.length),[9,8,8],'25 left: 9/8/8, extra to first player');
+  assert.equal(new Set([...g.players.flatMap(p=>[...p.up,...p.down,...p.hand,...p.draw])].map(c=>c.id)).size,52);});
 test('starter = lowest hand card, suit order S C H D, then 4s',()=>{const g=E.newGame([{id:'a',name:'a'},{id:'b',name:'b'},{id:'c',name:'c'}]);
   const C=id=>({r:{J:11,Q:12,K:13,A:14}[id.slice(0,-1)]||+id.slice(0,-1),s:id.slice(-1),id});
   g.players[0].hand=['4S','5C','KD'].map(C);g.players[1].hand=['4H','QS','2C'].map(C);g.players[2].hand=['4C','10S','AH'].map(C);g.players[0].up=['3S','3C','3H'].map(C);
@@ -17,9 +17,9 @@ test('starter = lowest hand card, suit order S C H D, then 4s',()=>{const g=E.ne
   const h=E.newGame([{id:'a',name:'a'},{id:'b',name:'b'}]);h.players[0].hand=['3D','JC','QC'].map(C);h.players[1].hand=['3C','9C','8C'].map(C);
   for(const p of h.players)E.ready(h,p.id);assert.equal(h.turn,1,'3C beats 3D');});
 test('swap hand<->up then 3♠ holder starts and must play it',()=>{const g=E.newGame([{id:'a',name:'a'},{id:'b',name:'b'}]);
-  const pa=g.players[0],pb=g.players[1];const all=[...g.draw,...pa.hand,...pa.up,...pa.down,...pb.hand,...pb.up,...pb.down];
+  const pa=g.players[0],pb=g.players[1];const all=[...pa.draw,...pb.draw,...pa.hand,...pa.up,...pa.down,...pb.hand,...pb.up,...pb.down];
   // force 3S into b's hand
-  const i=pb.hand.findIndex(()=>1);const s3=all.find(c=>c.id==='3S');for(const z of[g.draw,pa.hand,pa.up,pa.down,pb.up,pb.down,pb.hand]){const k=z.indexOf(s3);if(k>=0){z[k]=pb.hand[0];pb.hand[0]=s3;break;}}
+  const i=pb.hand.findIndex(()=>1);const s3=all.find(c=>c.id==='3S');for(const z of[pa.draw,pb.draw,pa.hand,pa.up,pa.down,pb.up,pb.down,pb.hand]){const k=z.indexOf(s3);if(k>=0){z[k]=pb.hand[0];pb.hand[0]=s3;break;}}
   const h=pa.hand[1].id,u=pa.up[0].id;E.swap(g,'a',h,u);assert.equal(pa.up[0].id,h);
   E.ready(g,'a');assert.equal(g.phase,'swap');E.ready(g,'b');assert.equal(g.phase,'play');assert.equal(g.turn,1);
   const other=pb.hand.find(c=>c.r!==3);if(other)assert.throws(()=>E.play(g,'b',[other.id]),/lowest/);E.play(g,'b',['3S']);assert.equal(g.pile.at(-1).id,'3S');});
@@ -62,8 +62,11 @@ test('cannot play (or chooses not to) -> pick up whole pile',()=>{const g=G([['K
   E.pickup(g,'p0');assert.equal(g.players[0].hand.length,3);assert.throws(()=>E.pickup(G([['KC'],['KD']]),'p0'),/empty/);const g2=G([['4C'],['KD']],{pile:['5S','QS']});assert.equal(E.legal(g2,'p0').length,0);E.pickup(g2,'p0');
   assert.equal(g2.players[0].hand.length,3);assert.equal(g2.turn,1);assert.equal(g2.pile.length,0);});
 test('draw only when down to 2 or fewer; refill to 3',()=>{const g=G([['5C','5D','6C','7C'],['KD']],{draw:['8C','9C','JC']});
-  ok(g,0,['5C']);assert.equal(g.players[0].hand.length,3);assert.equal(g.draw.length,3,'no draw while holding 3+');
-  const g2=G([['5C','5D','6C'],['KD']],{draw:['8C','9C','JC']});ok(g2,0,['5C','5D']);assert.equal(g2.players[0].hand.length,3);assert.equal(g2.draw.length,1);});
+  ok(g,0,['5C']);assert.equal(g.players[0].hand.length,3);assert.equal(g.players[0].draw.length,3,'no draw while holding 3+');
+  const g2=G([['5C','5D','6C'],['KD']],{draw:['8C','9C','JC']});ok(g2,0,['5C','5D']);assert.equal(g2.players[0].hand.length,3);assert.equal(g2.players[0].draw.length,1);});
+test('own draw piles: you refill only from yours; others keep theirs',()=>{const g=G([['5C','6C'],['KD']],{draw:['8C']});g.players[1].draw=[{r:9,s:'D',id:'9D'},{r:4,s:'D',id:'4D'}];
+  ok(g,0,['5C']);assert.deepEqual(g.players[0].hand.map(c=>c.id).sort(),['6C','8C']);assert.equal(g.players[0].draw.length,0);assert.equal(g.players[1].draw.length,2);
+  const v=E.view(g,'p0');assert.equal(v.draw,0);assert.equal(v.players[1].draw,2);});
 test('deck gone + hand empty -> pick up ALL face-up at once; then blind face-down',()=>{
   const g=G([['5C'],['KD','2D']],{up:[['JH','JD','4S']],down:[['QD'],['KC']],pile:['4C']});ok(g,0,['5C']);
   assert.deepEqual(g.players[0].hand.map(c=>c.id).sort(),['4S','JD','JH']);assert.equal(g.players[0].up.length,0);
