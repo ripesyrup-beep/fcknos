@@ -40,14 +40,15 @@ const card=(c,cls='')=>c?`<div class="card ${cls} ${'HD'.includes(c.id.slice(-1)
 const meP=()=>S&&S.game&&S.game.players[S.game.me.seat];
 const RULES=`<div class="rules"><b>Bryan's House Rules</b><br>
 Deal: 3 face-down, 3 face-up on top, 3 in hand. Swap hand ↔ face-up before play. Keep 3 in hand while the deck lasts (draw only once you're down to 2 or fewer). Deck gone + hand empty → pick up all your face-up cards at once. Then face-down, blind, one at a time.<br>
-• 3♠ starts. • Play multiples of the same rank. • Play equal or higher.<br>
+• 3♠ starts. • Play multiples of the same rank. • Play equal or higher. Order: 3 4 5 6 7 8 9 J Q K, then the high cards A 2 10.<br>
 • <b>A, 2, 10</b> are the high cards. Ace goes on anything. Whoever plays it calls <b>HIGH</b> (next must play A, 2 or 10) or <b>LOW</b> (next must play anything but A, 2, 10).<br>
 • <b>9</b>: next player must play 3–8 (or a 10). No 2 on a 9.<br>
 • <b>2</b> wild — on anything but a 9; pile resets.<br>
 • <b>10</b> burns the pile; you go again.<br>
 • <b>3-6-9</b> together trumps everything (playable on anything) — next player must go 3–8, like a 9. No burn.<br>
 • Four of a kind burns; you go again.<br>
-• <b>SLAP</b>: three of a rank on top and you hold the 4th? Hit SLAP, out of turn — fastest wins. Play continues from you.<br>
+• <b>Straights</b>: 4+ cards in a row (any suits, e.g. 5-6-7-8) in one move, if the <i>lowest</i> card could be played. Ace can be low (A-2-3-4) or high (J-Q-K-A), no wraparound. Only the <b>last (highest) card</b> of a straight has power: ending in 10 burns (you go again), ending in 9 = next plays 3–8, ending in A = you call HIGH/LOW. Specials in the middle do nothing.<br>
+• <b>SLAP &amp; CLOSE</b>: matching cards on top of the pile + the ones in your hand make four of a kind (1 down + your 3, 2 down + your 2, or 3 down + your 1)? A SLAP button pops up — hit it out of turn, fastest wins. Pile burns and you play next.<br>
 • 7 does nothing special. • Can't (or don't want to) play? Pick up the whole pile.<br>
 • 4 players = teams, partners across (1&3 vs 2&4). Block the next opponent so your partner can play. Partners can't see each other's hands.<br>
 • First out wins; last holding cards is the Shithead.</div>`;
@@ -55,22 +56,25 @@ function render(){const a=$('#app');
  if(!S){a.innerHTML=`<div class="box"><h1>fck<span>nos</span></h1><div class="lbl">Bryan's house rules · Shithead</div>
   <input id="nm" placeholder="Your name" maxlength="14" value="${localStorage.nm||''}"><button id="new">NEW PARTY</button>
   <div class="lbl" style="margin-top:14px">or join with a code</div><input id="cd" inputmode="numeric" maxlength="4" placeholder="1234"><button class="alt" id="join">JOIN</button>
+  <div class="lbl" style="margin-top:14px">or practice</div><div class="row" id="nb">${[1,2,3,4,5].map(n=>`<button class="alt nbot" data-n="${n}" style="${n===(+localStorage.nbots||3)?"background:#f5c84c;color:#2a1d00":""}">${n}</button>`).join("")}</div><div class="lbl">bot opponents${(+localStorage.nbots||3)===3?" · 4 players = teams":""}</div><button id="vsb">PLAY VS BOTS</button>
   <button class="alt" id="rb">RULES</button>${showRules?RULES:''}</div>`;
   const nm=()=>(localStorage.nm=$('#nm').value.trim())||toast('Enter your name');
-  $('#new').onclick=()=>nm()&&tx({t:'create',name:localStorage.nm});$('#join').onclick=()=>nm()&&($('#cd').value.length===4?tx({t:'join',code:$('#cd').value,name:localStorage.nm}):toast('4-digit code'));
+  $('#new').onclick=()=>nm()&&tx({t:'create',name:localStorage.nm});document.querySelectorAll('.nbot').forEach(e=>e.onclick=()=>{localStorage.nbots=e.dataset.n;render()});
+  $('#vsb').onclick=()=>nm()&&tx({t:'bots',name:localStorage.nm,n:+localStorage.nbots||3,fast:!!window.__fastBots});
+  $('#join').onclick=()=>nm()&&($('#cd').value.length===4?tx({t:'join',code:$('#cd').value,name:localStorage.nm}):toast('4-digit code'));
   $('#rb').onclick=()=>{showRules=!showRules;render()};return;}
  const host=S.host===S.you,g=S.game;
  if(!g){a.innerHTML=`<div class="box"><h1>fck<span>nos</span></h1><div class="lbl">Party code</div><div class="code">${S.code}</div>
   <div class="lbl">Players (${S.lobby.length}/6)${S.lobby.length===4?' · TEAMS 1&3 vs 2&4':''}</div>
-  ${S.lobby.map((p,i)=>`<div class="pl ${S.lobby.length===4?'t'+i%2:''}">Seat ${i+1}: ${p.name}${p.id===S.host?' 👑':''}${p.on?'':' (away)'}</div>`).join('')}
-  ${host?`<button id="go" ${S.lobby.length<2?'disabled':''}>START GAME</button><button class="alt" id="ob">HOUSE RULES ⚙</button>`:'<div class="status">Waiting for host to start…</div>'}
+  ${S.lobby.map((p,i)=>`<div class="pl ${S.lobby.length===4?'t'+i%2:''}">Seat ${i+1}: ${p.name}${p.bot?' 🤖 BOT':''}${p.id===S.host?' 👑':''}${p.on?'':' (away)'}</div>`).join('')}
+  ${host?`<button id="go" ${S.lobby.length<2?'disabled':''}>START GAME</button><div class="row"><button class="alt" id="ab" ${S.lobby.length>=6?"disabled":""}>+ BOT</button><button class="alt" id="kb" ${S.lobby.some(p=>p.bot)?"":"disabled"}>− BOT</button></div><button class="alt" id="ob">HOUSE RULES ⚙</button>`:'<div class="status">Waiting for host to start…</div>'}
   ${showOpts&&host?opts():''}<button class="alt" id="rb">RULES</button>${showRules?RULES:''}<button class="alt" id="lv">LEAVE</button></div>`;
-  if(host){$('#go').onclick=()=>tx({t:'start'});$('#ob').onclick=()=>{showOpts=!showOpts;render()};
+  if(host){$('#go').onclick=()=>tx({t:'start'});$('#ab').onclick=()=>tx({t:'addbot'});$('#kb').onclick=()=>tx({t:'kickbot'});$('#ob').onclick=()=>{showOpts=!showOpts;render()};
    document.querySelectorAll('[data-r]').forEach(e=>e.onchange=()=>tx({t:'rules',rules:{[e.dataset.r]:e.type==='checkbox'?e.checked:+e.value}}));}
   $('#rb').onclick=()=>{showRules=!showRules;render()};$('#lv').onclick=()=>{localStorage.removeItem('cp');S=null;render()};return;}
  const me=meP(),my=g.me,myTurn=g.turn===my.seat&&g.phase==='play',z=g.need3S&&me.up.some(c=>c.id==='3S')?'up':my.hand.length?'hand':me.up.length?'up':'down';
  const legalIds=new Set(my.legal.flatMap(l=>l.ids||[]));
- const others=g.players.filter(p=>p.seat!==my.seat).map(p=>`<div class="pl ${g.turn===p.seat&&g.phase==='play'?'turn':''} ${g.teams?'t'+p.team:''}"><b>${p.name}</b>${p.place?' ✔#'+p.place:''}<br>
+ const others=g.players.filter(p=>p.seat!==my.seat).map(p=>`<div class="pl ${g.turn===p.seat&&g.phase==='play'?'turn':''} ${g.teams?'t'+p.team:''}"><b>${p.name}</b>${p.bot?' <small>🤖BOT</small>':''}${p.place?' ✔#'+p.place:''}<br>
    <div class="row" style="gap:2px">${p.up.map(c=>card(c,'mini')).join('')||Array(p.down).fill(card(null,'mini')).join('')}</div>✋${p.hand} ⬇${p.down}${g.phase==='swap'?(p.ready?' ✅':' …'):''}</div>`).join('');
  let status=g.phase==='swap'?'Swap hand ↔ face-up, then READY':g.phase==='over'?(g.winner.team!=null?`TEAM ${g.winner.team+1} WINS! (${g.players.filter(p=>p.team===g.winner.team).map(p=>p.name).join(' & ')})`:`${g.players[g.winner.seat].name} WINS!`)
   :myTurn?(g.mode==='low'?'YOUR TURN — play 3 to 8':g.mode==='aceHigh'?'YOUR TURN — HIGH: A, 2 or 10':g.mode==='aceLow'?'YOUR TURN — LOW: no A, 2, 10':g.mode==='aceWait'?'Call your ACE':'YOUR TURN'):`${g.players[g.turn].name}'s turn`;
@@ -85,9 +89,9 @@ function render(){const a=$('#app');
  <div class="log">${g.log.slice().reverse().map(l=>`<div>${l}</div>`).join('')}</div>
  <button class="alt" id="rb" style="margin:10px auto;display:block">RULES</button>${showRules?RULES:''}
  ${g.mode==='aceWait'&&g.pendingAce===my.seat?`<div style="position:fixed;inset:0;background:#000a;z-index:8;display:flex;align-items:center;justify-content:center"><div class="box" style="background:#0d3b22;padding:22px;border-radius:18px;border:3px solid #f5c84c"><div class="status">You played an ACE.<br>Next player must go…</div><button id="ahi">HIGH<br><small>A, 2 or 10</small></button><button id="alo" class="alt">LOW<br><small>anything but A, 2, 10</small></button></div></div>`:''}
- ${g.slap&&g.slap.mine&&g.slap.msLeft>0?`<button id="slap">SLAP ${RN[g.slap.rank]}!</button>`:''}
+ ${g.slap&&g.slap.mine&&g.slap.msLeft>0?`<button id="slap">SLAP &amp; CLOSE ${RN[g.slap.rank]}${g.slap.need>1?' ×'+g.slap.need:''}!</button>`:''}
  <div class="bar">${g.phase==='swap'?`<button id="rdy" ${me.ready?'disabled':''}>${me.ready?'WAITING…':'READY'}</button>`:
-  g.phase==='play'?`<button id="pl" ${myTurn&&sel.length?'':'disabled'}>PLAY ${sel.length||''}</button>
+  g.phase==='play'?`<button id="pl" ${myTurn&&sel.length&&setKind(sel)?'':'disabled'}>${sel.length?(setKind(sel)?'PLAY '+setKind(sel):'not a set'):'PLAY'}</button>
   <button class="alt" id="pu" ${myTurn&&g.pileCount&&g.mode!=='aceWait'?'':'disabled'}>PICK UP</button>`:''}</div>`;
  $('#rb').onclick=()=>{showRules=!showRules;render()};
  if($('#again'))$('#again').onclick=()=>tx({t:'again'});
@@ -103,8 +107,13 @@ function render(){const a=$('#app');
   if(!id||(e.closest('#hand')?z!=='hand':z!=='up'))return;
   sel=sel.includes(id)?sel.filter(x=>x!==id):[...sel,id];render();});
  if(g.slap&&g.slap.mine&&g.slap.msLeft>0){clearTimeout(window._sl);window._sl=setTimeout(render,g.slap.msLeft);}}
+// client-side check of a selection: same rank, 3-6-9, or straight of 4+ (server re-validates)
+function setKind(ids){const rs=ids.map(id=>({A:14,K:13,Q:12,J:11}[id.slice(0,-1)]||+id.slice(0,-1)));if(!rs.length)return '';
+ if(rs.every(r=>r===rs[0]))return rs.length>1?rs.length+'×':RN[rs[0]];if(rs.length===3&&[3,6,9].every(r=>rs.includes(r)))return '3-6-9';
+ if(rs.length>=4&&new Set(rs).size===rs.length)for(const lo of[false,true]){const v=rs.map(r=>r===14&&lo?1:r).sort((a,b)=>a-b);if(v.every((x,i)=>!i||x===v[i-1]+1))return 'STRAIGHT';}
+ return null;}
 function opts(){const r=S.rules;const cb=(k,t)=>`<label class="opt">${t}<input type="checkbox" style="width:28px" data-r="${k}" ${r[k]?'checked':''}></label>`;
- return `<div class="box">${cb('fourBurns','Four of a kind burns the pile')}${cb('aceAnywhere','Ace playable on anything (player then calls HIGH/LOW) ⚑')}
+ return `<div class="box">${cb('fourBurns','Four of a kind burns the pile')}${cb('straights','Straights of 4+ allowed')}${cb('aceAnywhere','Ace playable on anything (player then calls HIGH/LOW) ⚑')}
  ${cb('tenOnNine','10 may be played on a 9 ⚑')}${cb('aceLowOnNine','Ace allowed on a 9 ⚑')}
  <label class="opt">Slap window (sec)<input type="number" style="width:70px;font-size:18px" min="1" max="15" data-r="slapMs" value="${r.slapMs/1000}" onchange="this.value*=1"></label>
  <div class="lbl">⚑ = guessed default, check with Bryan</div></div>`;}

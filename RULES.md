@@ -8,6 +8,12 @@ Before play you may swap hand cards with your face-up cards.
 **Start:** whoever holds the **3♠** goes first and must play it (can add other 3s).
 
 **Your turn:** play one card, or several of the **same rank**, equal to or higher than the top card.
+Order (low → high): 3 4 5 6 7 8 9 J Q K, then the high cards **A 2 10**. A 2 resets the pile so anything goes on it.
+
+**Straights:** 4 or more in a row (any suits, e.g. 5-6-7-8) in one move, as long as the **lowest** card could be played on the pile.
+Ace can be low (A-2-3-4) or high (J-Q-K-A), no wraparound (Q-K-A-2 is not a straight).
+Only the **last (highest) card** of a straight has power: ends in **10** → burns, you go again; ends in **9** → next plays 3–8; ends in **A** → you call HIGH/LOW.
+Specials in the middle do nothing (a 2 in the middle is just a 2). Otherwise a straight never burns.
 Keep 3 in hand while the draw pile lasts — you only draw once you're down to 2 or fewer, then refill to 3.
 Draw pile gone and hand empty → pick up **all three face-up cards at once** into your hand.
 When those are gone, play face-down cards blind, one at a time (a blind card that doesn't fit = pick up the pile plus that card).
@@ -23,13 +29,16 @@ When those are gone, play face-down cards blind, one at a time (a blind card tha
 | **3-6-9** | A 3, 6 and 9 (any suits) played together. Trumps everything — playable on anything, even a 9. **Does not burn.** Next player must go **3 through 8**, same as after a 9. |
 | **Four of a kind** | Four of the same rank in a row on the pile burns it. You go again. |
 
-**SLAP!** When three of a rank sit on top and you hold the fourth, a big SLAP button appears.
-Hit it out of turn — fastest tap wins (4-second window). It makes four of a kind, burns, and play continues from you.
+**SLAP & CLOSE!** If the matching cards on top of the pile plus the ones in your hand make **four of a kind**
+(1 on the pile + your 3, 2 on the pile + your 2, or 3 on the pile + your 1), a SLAP button pops up.
+Hit it out of turn — fastest tap wins (4-second window). Your cards go down, the pile **burns**, and you play next.
 
 **Teams:** block the next opponent so your partner can play. Partners can't see each other's hands. No extra help once out.
+
+**Practice:** PLAY VS BOTS on the home screen (1–5 bots; 3 bots = 4 players = teams). Hosts can also add bots with + BOT in the lobby.
 
 **Winning:** first out wins. Teams: a team wins when both partners are out. Last one holding cards is the **Shithead**.
 
 ---
 Host "House Rules ⚙" toggles (⚑ = my guess, not confirmed by Bryan):
-four-of-a-kind burns (on) · slap window seconds (4) · ⚑ Ace playable on anything (on) · ⚑ 10 allowed on a 9 (on) · ⚑ Ace allowed on a 9 (off)
+four-of-a-kind burns (on) · straights (on) · ⚑ slap with just 1 on the pile (on) · stalemate guard: after 30 pick-ups with no burn, the next play burns (on) · slap window seconds (4) · ⚑ Ace playable on anything (on) · ⚑ 10 allowed on a 9 (on) · ⚑ Ace allowed on a 9 (off)

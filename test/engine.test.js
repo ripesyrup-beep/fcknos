@@ -45,7 +45,7 @@ test('7 does nothing special',()=>{const g=G([['7C'],['KD']],{pile:['5S']});ok(g
 test('slap-in: three of a rank on top, holder of fourth slaps out of turn; first wins; window expires',()=>{let t=0;
   const g=G([['7C','7D','7H','4S'],['5S'],['7S','KD'],['QC']],{now:()=>t});
   ok(g,0,['7C','7D','7H']);assert.ok(g.slap);assert.equal(g.turn,1);
-  assert.throws(()=>E.slap(g,'p1'),/have/);E.slap(g,'p2');assert.equal(g.pile.length,0,'4 of a kind burned');assert.equal(g.turn,2,'continues from slapper');
+  assert.throws(()=>E.slap(g,'p1'),/close/);E.slap(g,'p2');assert.equal(g.pile.length,0,'4 of a kind burned');assert.equal(g.turn,2,'continues from slapper');
   assert.throws(()=>E.slap(g,'p2'),/late/,'second slap loses the race');
   // expiry
   const g2=G([['7C','7D','7H','4S'],['5S'],['7S'],['QC']],{now:()=>t});t=0;ok(g2,0,['7C','7D','7H']);t=4001;assert.throws(()=>E.slap(g2,'p2'),/late/);
@@ -70,3 +70,28 @@ test('4 players = teams, partners across (seats 1&3 vs 2&4); team wins when both
   E.play(t,'p2',['KS']);assert.equal(t.phase,'over');assert.equal(t.winner.team,0);});
 test('partners cannot see each other hands',()=>{const g=E.newGame([1,2,3,4].map(i=>({id:'p'+i,name:'x'})));const v=E.view(g,'p1');
   assert.ok(Array.isArray(v.me.hand));assert.ok(v.players.every(p=>typeof p.hand==='number'));assert.ok(!JSON.stringify(v).includes(JSON.stringify(g.players[2].hand[0])));});
+test('straights: 4+ in a row, lowest card must fit; ace low or high, no wrap; 2 not wild inside; 10 on top no burn',()=>{
+  let g=G([['5C','6D','7H','8S','KD'],['9C']],{pile:['5S']});ok(g,0,['5C','6D','7H','8S']);assert.equal(g.pile.at(-1).r,8);assert.equal(g.turn,1);
+  g=G([['5C','6D','7H','8S'],['9C']],{pile:['6S']});bad(g,0,['5C','6D','7H','8S'],'lowest 5 < 6');
+  g=G([['5C','6D','7H'],['9C']],{pile:['3S']});bad(g,0,['5C','6D','7H'],'only 3 cards');
+  g=G([['5C','6D','8H','9S'],['9C']]);bad(g,0,['5C','6D','8H','9S'],'gap');
+  g=G([['AC','2D','3H','4S'],['9C']],{pile:['3D']});ok(g,0,['AC','2D','3H','4S'],'ace low: lowest is A, A goes on anything');assert.equal(g.pile.at(-1).r,4);
+  g=G([['JC','QD','KH','AS'],['9C']],{pile:['10D','JD']});ok(g,0,['JC','QD','KH','AS']);assert.equal(g.mode,'aceWait','ace on top of a straight -> call');
+  g=G([['QC','KD','AH','2S'],['9C']]);bad(g,0,['QC','KD','AH','2S'],'no wraparound');
+  g=G([['2C','3D','4H','5S'],['9C']],{pile:['KD']});ok(g,0,['2C','3D','4H','5S']);assert.equal(g.mode,'norm','2 in a straight does not reset the pile');assert.equal(g.pile.at(-1).r,5);
+  g=G([['2C','3D','4H','5S'],['9C']],{pile:['9D']});bad(g,0,['2C','3D','4H','5S'],'lowest 2 cannot go on a 9');
+  g=G([['7C','8D','9H','10S','4C'],['9C']],{pile:['6D']});ok(g,0,['7C','8D','9H','10S']);assert.equal(g.pile.length,0,'straight ENDING in 10 burns');assert.equal(g.turn,0,'and goes again');
+  g=G([['8C','9D','10H','JS'],['KC']],{pile:['6D']});ok(g,0,['8C','9D','10H','JS']);assert.equal(g.pile.length,5,'10 in the middle does nothing');
+  g=G([['6C','7D','8H','9S'],['KC','5D']],{pile:['4D']});ok(g,0,['6C','7D','8H','9S']);assert.equal(g.mode,'low','straight ending in 9 -> next 3-8');bad(g,1,['KC']);ok(g,1,['5D']);
+  g=G([['8C','9D','10H','JS'],['9C']],{pile:['8S','8H','8D']});ok(g,0,['8C','9D','10H','JS']);assert.equal(g.pile.length,7,'straights never burn');assert.equal(g.turn,1);
+  g=G([['4C','5D','6H','7S'],['9C']],{pile:['9D']});ok(g,0,['4C','5D','6H','7S'],'after a 9 the lowest (4) is 3-8');
+  g=G([['5C','6D','7H','8S'],['9C']]);assert.ok(E.legal(g,'p0').some(o=>o.straight&&o.ids.length===4));});
+test('slap & close: N on top + your 4-N complete four of a kind, burns, slapper plays next',()=>{let t=0;
+  let g=G([['8C','8D','4S'],['5S'],['8H','8S','KD'],['QC']],{now:()=>t});ok(g,0,['8C','8D']);assert.equal(g.slap.need,2);
+  assert.ok(E.view(g,'p2').slap.mine);assert.ok(!E.view(g,'p1').slap.mine,'button only for someone who can complete four');
+  E.slap(g,'p2');assert.equal(g.pile.length,0);assert.equal(g.turn,2);assert.equal(g.players[2].hand.length,1);
+  g=G([['8C','4S'],['5S'],['8H','8S','8D','KD'],['QC']],{now:()=>t});ok(g,0,['8C']);assert.equal(g.slap.need,3);E.slap(g,'p2');assert.equal(g.burned,4);assert.equal(g.turn,2);
+  g=G([['8C','4S'],['5S'],['8H','8S','KD'],['QC']],{now:()=>t});ok(g,0,['8C']);assert.throws(()=>E.slap(g,'p2'),/close/,'only 2 of the 3 needed');
+  g=G([['8C','8D','4S'],['5S'],['8H','8S'],['QC']],{now:()=>t});ok(g,0,['8C','8D']);t=99999;assert.throws(()=>E.slap(g,'p2'),/late/);});
+test('stalemate guard burns the pile after too many pick-ups',()=>{const g=G([['9C','4D'],['KD','5S']],{rules:{cycleLimit:2}});
+  ok(g,0,['9C']);E.pickup(g,'p1');assert.equal(g.pickups,1);g.pickups=2;ok(g,0,['4D']);assert.equal(g.pile.length,0,'burned by guard');assert.equal(g.pickups,0);assert.equal(g.turn,1);});

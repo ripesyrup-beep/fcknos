@@ -28,3 +28,23 @@ test('UI renders and plays in a real browser (no console/page errors)',{timeout:
     await B.screenshot({path:SHOTS+'/ui-5-ace-high-banner.png',fullPage:true});
     assert.deepEqual(errors,[]);
   }finally{await b.close();srv.shutdown();}});
+test('PLAY VS BOTS in a real browser: bots play, no console errors',{timeout:90000},async()=>{
+  const srv=await start(0);const U='http://localhost:'+srv.address().port;
+  const b=await pp.launch({executablePath:CHROME,args:['--no-sandbox']});const errors=[];
+  try{const p=await b.newPage();p.on('pageerror',e=>errors.push('pageerror: '+e.message));p.on('console',m=>{if(m.type()==='error')errors.push('console: '+m.text())});
+    await p.setViewport({width:390,height:844,deviceScaleFactor:2,isMobile:true,hasTouch:true});await p.goto(U);
+    const click=s=>p.evaluate(s=>{const e=document.querySelector(s);if(e)e.click();return !!e},s);
+    await p.waitForSelector('#vsb');await click('.nbot[data-n="3"]');await sleep(100);await p.type('#nm','Bryan');
+    await p.screenshot({path:SHOTS+'/ui-6-bots-home.png',fullPage:true});
+    await p.evaluate(()=>{window.__fastBots=false});await click('#vsb');await p.waitForSelector('#rdy');
+    const names=await p.$$eval('.pl b',es=>es.map(e=>e.textContent));assert.equal(names.length,3);
+    assert.equal(await p.$$eval('.pl small',es=>es.filter(e=>/BOT/.test(e.textContent)).length),3);
+    await click('#rdy');let myTurns=0,logLen=0;
+    for(let i=0;i<300&&myTurns<3;i++){await sleep(150);
+      const st=await p.evaluate(()=>({s:(document.querySelector('.status')||{}).textContent||'',ace:!!document.querySelector('#ahi'),over:/WINS/.test((document.querySelector('.status')||{}).textContent||'')}));
+      if(st.over)break;if(st.ace){await click('#ahi');continue;}
+      if(/^YOUR TURN/.test(st.s)){myTurns++;const played=await p.evaluate(()=>{const c=document.querySelector('#hand .card.ok')||document.querySelector('#table .card.back.ok');if(!c)return false;c.click();return true;});
+        await sleep(80);if(!(await click('#pl:not([disabled])')))await click('#pu:not([disabled])');}}
+    logLen=await p.$$eval('.log div',es=>es.length);assert.ok(myTurns>=1,'human got turns');assert.ok(logLen>=5,'bots played (log '+logLen+')');
+    await p.screenshot({path:SHOTS+'/ui-7-bots-ingame.png',fullPage:true});
+    assert.deepEqual(errors,[]);}finally{await b.close();srv.shutdown();}});
